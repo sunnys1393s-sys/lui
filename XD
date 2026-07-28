@@ -1,0 +1,169 @@
+-- ===================================================
+--  Rayfield UI - Speed (Input & Slider) + Godmode + Noclip
+-- ===================================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Variables
+local SpeedMultiplier = 50
+local SpeedEnabled = false
+local GodmodeEnabled = false
+local NoclipEnabled = false
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+   Name = "⚡ Ultimate Speed & Hacks Hub",
+   LoadingTitle = "Rayfield Interface",
+   LoadingSubtitle = "by Assistant",
+   ConfigurationSaving = { Enabled = false },
+   Discord = { Enabled = false },
+   KeySystem = false
+})
+
+-- Create Main Tab
+local MainTab = Window:CreateTab("Main Features", 4483362458)
+
+-- ===================================================
+--  SPEED SETTINGS
+-- ===================================================
+MainTab:CreateSection("Speed Settings")
+
+-- ช่องสำหรับพิมพ์ตัวเลขความเร็วโดยตรง
+MainTab:CreateInput({
+   Name = "Custom Speed (พิมพ์ตัวเลขความเร็ว)",
+   PlaceholderText = "เช่น 50, 150, 500",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local Num = tonumber(Text)
+      if Num then
+         if Num > 1000 then Num = 1000 end
+         if Num < 1 then Num = 1 end
+         SpeedMultiplier = Num
+         
+         Rayfield:Notify({
+            Title = "อัปเดตความเร็ว!",
+            Content = "ตั้งค่าความเร็วเป็น: " .. tostring(SpeedMultiplier),
+            Duration = 2,
+            Image = 4483362458,
+         })
+      end
+   end,
+})
+
+-- สไลเดอร์สำหรับการเลื่อนปรับ
+MainTab:CreateSlider({
+   Name = "Speed Slider (สไลเดอร์ปรับความเร็ว)",
+   Range = {16, 1000},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 50,
+   Flag = "SpeedSlider",
+   Callback = function(Value)
+      SpeedMultiplier = Value
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Enable Speed (เปิดใช้งานวิ่งเร็ว)",
+   CurrentValue = false,
+   Flag = "SpeedToggle",
+   Callback = function(Value)
+      SpeedEnabled = Value
+      if not Value then
+         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+         end
+      end
+   end,
+})
+
+-- ===================================================
+--  PROTECTION & UTILITIES
+-- ===================================================
+MainTab:CreateSection("Protection & Movement")
+
+MainTab:CreateToggle({
+   Name = "Godmode (อมตะสมบูรณ์แบบ)",
+   CurrentValue = false,
+   Flag = "GodmodeToggle",
+   Callback = function(Value)
+      GodmodeEnabled = Value
+      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+         Humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, not Value)
+      end
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Noclip (เดินทะลุกำแพง)",
+   CurrentValue = false,
+   Flag = "NoclipToggle",
+   Callback = function(Value)
+      NoclipEnabled = Value
+   end,
+})
+
+-- ===================================================
+--  MAIN CORE LOOP
+-- ===================================================
+RunService.Stepped:Connect(function()
+    if not LocalPlayer.Character then return end
+    
+    local Character = LocalPlayer.Character
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    local RootPart = Character:FindFirstChild("HumanoidRootPart")
+    
+    -- 1. ระบบ Noclip (เดินทะลุกำแพง)
+    if NoclipEnabled then
+        for _, part in pairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide == true then
+                part.CanCollide = false
+            end
+        end
+    end
+
+    if Humanoid and RootPart then
+        -- 2. ระบบวิ่งเร็ว ปรับแต่งให้แรงดันไวขึ้น ลื่นตามค่าเป๊ะๆ
+        if SpeedEnabled == true and Humanoid.MoveDirection.Magnitude > 0 then
+            local MoveDirection = Humanoid.MoveDirection
+            -- สูตรคำนวณใหม่ ให้ความเร็วพุ่งสัมพันธ์กับตัวเลขจริง
+            local SpeedFactor = (SpeedMultiplier - 16) / 50
+            if SpeedFactor < 0 then SpeedFactor = 0 end
+            
+            RootPart.CFrame = RootPart.CFrame + (MoveDirection * SpeedFactor)
+        end
+
+        -- 3. ระบบอมตะ (Perfect Godmode)
+        if GodmodeEnabled == true then
+            if Humanoid.Health < Humanoid.MaxHealth then
+                Humanoid.Health = Humanoid.MaxHealth
+            end
+            
+            for _, part in pairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanTouch = false
+                end
+            end
+        else
+            for _, part in pairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanTouch = true
+                end
+            end
+        end
+    end
+end)
+
+Rayfield:Notify({
+   Title = "อัปเดตเวอร์ชันใหม่!",
+   Content = "เพิ่มระบบพิมพ์ความเร็ว, เดินทะลุกำแพง (Noclip) และปรับความเร็วให้ลื่นขึ้นแล้วครับ",
+   Duration = 4,
+   Image = 4483362458,
+})
+
